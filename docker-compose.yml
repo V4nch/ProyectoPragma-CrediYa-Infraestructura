@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:17
+    container_name: crediya-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: prueba
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - crediya-net
+  usuarios:
+    build:
+      context: ../ProyectoPragma-CrediYa-Usuarios
+      dockerfile: Dockerfile
+    container_name: ms-usuarios
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_R2DBC_HOST: crediya-db
+      SPRING_R2DBC_PORT: 5432
+      SPRING_R2DBC_DATABASE: postgres
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: prueba
+    depends_on:
+      - db
+    networks:
+      - crediya-net
+  solicitudes:
+    build:
+      context: ../ProyectoPragma-CrediYa-Solicitudes
+      dockerfile: Dockerfile
+    container_name: ms-solicitudes
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_R2DBC_HOST: crediya-db
+      SPRING_R2DBC_PORT: 5432
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: prueba
+      MS_USUARIOS_URL: http://usuarios:8083/api/v1
+    depends_on:
+      - db
+      - usuarios
+    networks:
+      - crediya-net
+
+volumes:
+  postgres-data:
+
+networks:
+  crediya-net:
+    driver: bridge
